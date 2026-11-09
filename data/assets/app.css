@@ -244,6 +244,35 @@ td.num { font-variant-numeric: tabular-nums; }
 }
 .foot .src { margin-top: 2px; }
 
+/* ---------- 联系方式（每页自动插在页脚上方） ---------- */
+.wxcard {
+  box-sizing: border-box;
+  width: calc(100% - 32px); max-width: 688px; margin: 4px auto 8px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+  border: 1px solid #F6DDBF; border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(194, 90, 40, .07);
+}
+.wxcard .ico {
+  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px;
+  background: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; line-height: 1;
+}
+.wxcard .txt { flex: 1; min-width: 0; }
+.wxcard .t1 { font-size: 11.5px; color: #B45309; letter-spacing: .3px; }
+.wxcard .t2 {
+  font-size: 15.5px; font-weight: 700; color: #9A3412; letter-spacing: .6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  word-break: break-all;
+}
+.wxcard .btn {
+  flex: 0 0 auto; border: 0; border-radius: 10px; padding: 9px 15px;
+  background: var(--brand); color: #fff; font-size: 13px; font-weight: 650;
+  font-family: inherit; cursor: pointer; transition: transform .12s, background .2s;
+}
+.wxcard .btn:active { transform: scale(.95); }
+.wxcard .btn.done { background: #2E7D5B; }
+
 /* ---------- 深色屏（微信深色模式） ---------- */
 @media (prefers-color-scheme: dark) {
   :root {
@@ -259,4 +288,8 @@ td.num { font-variant-numeric: tabular-nums; }
   .note { border-left-color: #4A3A29; }
   .search input:focus { border-color: #5A4632; }
   tbody tr + tr td { border-top-color: #2C241C; }
+  .wxcard { background: linear-gradient(135deg, #2A2119 0%, #33251A 100%); border-color: #4A3722; }
+  .wxcard .ico { background: rgba(255, 255, 255, .07); }
+  .wxcard .t1 { color: #D9A06A; }
+  .wxcard .t2 { color: #F0A874; }
 }

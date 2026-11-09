@@ -83,11 +83,79 @@
     });
   }
 
+  // ---------- 联系方式（每页自动挂在页脚上方，别在 5 个页面里各写一遍） ----------
+  var WX_ID = 'shang_an_baaa';
+
+  // 复制：https 下优先用 clipboard API；微信内置浏览器经常不给权限，
+  // 必须退回 execCommand，再不行就选中号码让用户长按复制（微信号是真实文本，长按一定能选）
+  function legacyCopy(t) {
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = t;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, t.length);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+  }
+  function copyText(t) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(t).catch(function () { return legacyCopy(t); });
+    }
+    return legacyCopy(t);
+  }
+
+  function mountWx() {
+    var foot = document.querySelector('.foot');
+    if (!foot || document.querySelector('.wxcard')) return;
+    var box = document.createElement('div');
+    box.className = 'wxcard';
+    box.innerHTML =
+      '<div class="ico">💬</div>' +
+      '<div class="txt">' +
+        '<div class="t1">选专业 / 志愿填报拿不准，加微信问我</div>' +
+        '<div class="t2" id="wxid">' + esc(WX_ID) + '</div>' +
+      '</div>' +
+      '<button class="btn" type="button" id="wxcopy">复制</button>';
+    foot.parentNode.insertBefore(box, foot);
+
+    var btn = box.querySelector('#wxcopy');
+    var idEl = box.querySelector('#wxid');
+    btn.addEventListener('click', function () {
+      copyText(WX_ID).then(function () {
+        btn.textContent = '已复制';
+        btn.classList.add('done');
+        setTimeout(function () { btn.textContent = '复制'; btn.classList.remove('done'); }, 1800);
+      }).catch(function () {
+        // 复制被拦（常见于微信内置浏览器）→ 直接把号码选中，提示长按
+        var r = document.createRange();
+        r.selectNodeContents(idEl);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+        btn.textContent = '长按号码';
+        setTimeout(function () { btn.textContent = '复制'; }, 2400);
+      });
+    });
+  }
+
   window.DB = {
     esc: esc, fmtInt: fmtInt, fmtMoney: fmtMoney, qs: qs,
     CATS: CATS, catOrder: catOrder,
-    paged: paged, mountBack: mountBack, renderChips: renderChips
+    paged: paged, mountBack: mountBack, renderChips: renderChips,
+    wx: WX_ID, mountWx: mountWx
   };
 
-  document.addEventListener('DOMContentLoaded', mountBack);
+  // app.js 在 body 末尾加载，DOM 一般已就绪；仍兼容脚本被提前引用的情形
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { mountBack(); mountWx(); });
+  } else {
+    mountBack();
+    mountWx();
+  }
 })();
