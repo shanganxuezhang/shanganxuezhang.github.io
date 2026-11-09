@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF7F1">
+<title>扩招缩招对比 2025→2026 · 江苏专转本</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/app.css">
+<style>
+  .switch { display: flex; gap: 6px; background: var(--bg-soft); border-radius: 10px; padding: 4px; margin-bottom: 12px; }
+  .switch div { flex: 1; text-align: center; padding: 7px; border-radius: 8px; font-size: 13.5px; color: var(--ink-2); }
+  .switch div.on { background: var(--card); color: var(--brand-deep); font-weight: 650; box-shadow: 0 1px 4px rgba(120,92,60,.1); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="back">‹</div>
+  <h1>扩招缩招对比</h1>
+  <div class="sub">2025 → 2026</div>
+</div>
+
+<div class="wrap">
+
+  <div class="note" id="overview"></div>
+
+  <div class="switch" id="sw">
+    <div data-m="all" class="on">全部</div>
+    <div data-m="add">扩招</div>
+    <div data-m="cut">缩招</div>
+    <div data-m="new">新增 / 停招</div>
+  </div>
+
+  <div id="list"></div>
+
+  <div class="note">
+    <b>怎么看</b>：计划数增加说明这所学校今年多招人，理论上竞争会缓和一点；但真正的录取难度还要看当年报考人数。
+    去年大幅缩招的学校，今年投档线往往偏高，别只看计划数就冲。
+  </div>
+
+</div>
+
+<div class="foot">
+  <div>数据来源：江苏省教育考试院 2025 / 2026 年专转本分校计划表</div>
+</div>
+
+<script src="data/plan-school.js"></script>
+<script src="data/plan-major.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var S = window.DATA_SCHOOL, M = window.DATA_MAJOR;
+
+  function schoolKey(name) {
+    var t = String(name || '').replace(/[\s\u3000]/g, '');
+    if (t === '常熟理工学院') return '苏州工学院';
+    if (/^江苏科技大学[（(]张家港校区[）)]$/.test(t)) return '江苏科技大学';
+    return t;
+  }
+
+  var m25 = {}, m26 = {};
+  function put(map, s) {
+    var k = s.skey || schoolKey(s.name);
+    if (!k) return;
+    map[k] = s;
+  }
+  S.y2025.forEach(function (s) { put(m25, s); });
+  S.y2026.forEach(function (s) { put(m26, s); });
+
+  var rows = [];
+  var keys = {};
+  Object.keys(m25).forEach(function (k) { keys[k] = 1; });
+  Object.keys(m26).forEach(function (k) { keys[k] = 1; });
+
+  Object.keys(keys).forEach(function (k) {
+    var a = m25[k], b = m26[k];
+    var p25 = a ? a.total : 0;
+    var p26 = b ? b.total : 0;
+    var majorCount = M.filter(function (x) { return (b && x.code === b.code); }).length;
+    rows.push({
+      key: k,
+      name: (b && b.name) || (a && a.name) || k,
+      p25: p25, p26: p26,
+      delta: p26 - p25,
+      isNew: !a && !!b,
+      gone: !!a && !b,
+      majorCount: majorCount,
+      phone: (b && b.phone) || ''
+    });
+  });
+
+  // 概览
+  var t25 = rows.reduce(function (a, b) { return a + b.p25; }, 0);
+  var t26 = rows.reduce(function (a, b) { return a + b.p26; }, 0);
+  var addN = rows.filter(function (x) { return x.delta > 0 && !x.isNew; }).length;
+  var cutN = rows.filter(function (x) { return x.delta < 0; }).length;
+  var flatN = rows.filter(function (x) { return x.delta === 0 && !x.isNew && !x.gone; }).length;
+  var newN = rows.filter(function (x) { return x.isNew; }).length;
+  var goneN = rows.filter(function (x) { return x.gone; }).length;
+
+  document.getElementById('overview').innerHTML =
+    '2026 年全省计划 <b>' + DB.fmtInt(t26) + '</b> 人，2025 年是 ' + DB.fmtInt(t25) + ' 人，' +
+    '总量 <b>' + (t26 - t25 >= 0 ? '增加 ' : '减少 ') + Math.abs(t26 - t25) + '</b> 人（' +
+    ((t26 - t25) / t25 * 100).toFixed(2) + '%）。' +
+    '分院校看：<b>' + addN + '</b> 所扩招、<b>' + cutN + '</b> 所缩招、' + flatN + ' 所持平，' +
+    '新增 <b>' + newN + '</b> 所' + (goneN ? '、停招 ' + goneN + ' 所' : '') + '。';
+
+  function rowHtml(x) {
+    var d = x.delta;
+    var sign = d > 0 ? '+' : '';
+    var max = Math.max.apply(null, rows.map(function (y) { return Math.abs(y.delta); })) || 1;
+    var w = Math.round(Math.abs(d) / max * 100);
+    // 扩招（+）对考生是利好 → 绿；缩招 → 红
+    var color = d > 0 ? '#2E7D5B' : (d < 0 ? '#C0392B' : '#9C9186');
+
+    var tag = '';
+    if (x.isNew) tag = '<span class="tag brand">2026 新增</span>';
+    else if (x.gone) tag = '<span class="tag">2026 停招</span>';
+
+    return '<div class="row">' +
+      '<div class="l1"><div class="school">' + DB.esc(x.name) + ' ' + tag + '</div>' +
+      '<div class="score" style="font-size:16px;color:' + color + '">' + (d === 0 ? '±0' : sign + d) + '</div></div>' +
+      '<div class="l2" style="font-size:12px">' +
+        '<span>2025 <b>' + (x.isNew ? '—' : DB.fmtInt(x.p25)) + '</b></span>' +
+        '<span class="dot">→</span>' +
+        '<span>2026 <b>' + (x.gone ? '—' : DB.fmtInt(x.p26)) + '</b></span>' +
+        (x.majorCount ? '<span class="dot">·</span><span>' + x.majorCount + ' 个专业</span>' : '') +
+      '</div>' +
+      '<div style="height:4px;border-radius:2px;background:var(--bg-soft);margin-top:7px">' +
+      '<div style="height:4px;border-radius:2px;width:' + w + '%;background:' + color + '"></div></div>' +
+      '</div>';
+  }
+
+  var mode = 'all';
+  var listEl = document.getElementById('list');
+
+  function apply() {
+    var arr = rows.slice();
+    if (mode === 'add') arr = arr.filter(function (x) { return x.delta > 0; }).sort(function (a, b) { return b.delta - a.delta; });
+    else if (mode === 'cut') arr = arr.filter(function (x) { return x.delta < 0; }).sort(function (a, b) { return a.delta - b.delta; });
+    else if (mode === 'new') arr = arr.filter(function (x) { return x.isNew || x.gone; }).sort(function (a, b) { return b.p26 - a.p26; });
+    else arr.sort(function (a, b) { return b.p26 - a.p26; });
+
+    if (!arr.length) {
+      listEl.innerHTML = '<div class="empty">这一栏没有数据</div>';
+      return;
+    }
+    listEl.innerHTML = arr.map(rowHtml).join('');
+  }
+
+  document.getElementById('sw').addEventListener('click', function (e) {
+    var d = e.target.closest('[data-m]');
+    if (!d) return;
+    mode = d.getAttribute('data-m');
+    this.querySelectorAll('div').forEach(function (x) { x.classList.toggle('on', x === d); });
+    apply();
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF7F1">
+<title>2025 投档线查询 · 江苏专转本</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="back">‹</div>
+  <h1>投档线查询</h1>
+  <div class="sub">2025 年</div>
+</div>
+
+<div class="wrap">
+
+  <div class="search">
+    <span class="mag">🔍</span>
+    <input id="kw" type="search" placeholder="搜院校或专业，如「南京工业」「软件工程」" autocomplete="off">
+  </div>
+
+  <div class="search">
+    <span class="mag">🎯</span>
+    <input id="myScore" type="number" inputmode="numeric" placeholder="输入你的分数，看能投哪些（如 320）" autocomplete="off">
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="note" id="hint" style="display:none"></div>
+
+  <div id="list"></div>
+  <button class="more" id="more" style="display:none"></button>
+
+  <div class="empty" id="empty" style="display:none">没有符合条件的记录，换个关键词或类别试试</div>
+
+</div>
+
+<div class="foot">
+  <div>投档线为 2025 年平行志愿实际投档结果</div>
+  <div class="src">来源：江苏省教育考试院《2025 年专转本选拔考试平行志愿院校（专业）投档分数线》</div>
+</div>
+
+<script src="data/score.js"></script>
+<script src="data/province-line.js"></script>
+<script src="data/plan-school.js"></script>
+<script src="data/plan-major.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var S = window.DATA_SCORE;
+  var LINE = window.DATA_LINE, SCHOOL = window.DATA_SCHOOL, MAJOR = window.DATA_MAJOR;
+
+  var lineMap = {};
+  LINE.list.forEach(function (p) { lineMap[p.name] = p.y2025; });
+
+  // 2026 该「院校 + 专业」的实际计划数（不是全校总数 —— 显示全校数会让人误以为
+  // 这个专业招那么多人，直接影响志愿判断，所以必须精确到专业，并对专业名做去空格归一，
+  // 因为官方表里「学前教育 (师范)」和「学前教育(师范)」两种写法都存在）
+  var norm = function (s) { return String(s || '').replace(/[\s\u3000（）()]/g, ''); };
+  var planMap = {};
+  MAJOR.forEach(function (m) {
+    var k = m.code + '|' + norm(m.major);
+    planMap[k] = (planMap[k] || 0) + m.plan;
+  });
+  // 院校名 → 代号（投档线表只有名字，专业计划表有代号）
+  // 2025 的「江苏科技大学（张家港校区）」2026 已并入「江苏科技大学」，不加别名会误判成停招
+  var ALIAS = { '江苏科技大学（张家港校区）': '江苏科技大学', '常熟理工学院': '苏州工学院' };
+  var nameToCode = {};
+  SCHOOL.y2026.forEach(function (s) { nameToCode[s.name] = s.code; });
+  Object.keys(ALIAS).forEach(function (old) {
+    if (nameToCode[ALIAS[old]]) nameToCode[old] = nameToCode[ALIAS[old]];
+  });
+
+  var state = { cat: DB.qs('cat') || '', kw: '', score: 0 };
+  var items = [], pager = null;
+  var listEl = document.getElementById('list');
+  var moreBtn = document.getElementById('more');
+  var emptyEl = document.getElementById('empty');
+  var hintEl = document.getElementById('hint');
+
+  // 类别 chip：只显示数据里真实存在的类别，按固定顺序
+  var cats = DB.CATS.filter(function (c) {
+    return S.some(function (x) { return x.cat === c; });
+  });
+
+  function pick(c) { state.cat = c; apply(); }
+
+  DB.renderChips(document.getElementById('chips'), cats, state.cat, pick, '全部类别');
+
+  function badge(diff) {
+    if (diff >= 20) return '<span class="tag" style="background:#E8F3EC;color:#2E7D5B">稳</span>';
+    if (diff >= 5) return '<span class="tag" style="background:#F4F1E4;color:#8A7A3E">较稳</span>';
+    return '<span class="tag" style="background:#FBEAE6;color:#C0392B">压线</span>';
+  }
+
+  function renderOne(x) {
+    var el = document.createElement('div');
+    el.className = 'row';
+
+    var diffHtml = '';
+    if (state.score > 0) {
+      var d = state.score - x.score;
+      if (d >= 0) diffHtml = '<span class="tag brand">+ ' + d + ' 分</span>' + badge(d);
+      else diffHtml = '<span class="tag">差 ' + (-d) + ' 分</span>';
+    }
+
+    var line = lineMap[x.cat];
+    var lineHtml = line ? '<span class="tag">省控 ' + line + '</span>' : '';
+
+    // 该专业 2026 计划：优先用 2026 院校名（改名后）去查，查不到再用 2025 原名
+    var code = nameToCode[x.school];
+    var plan = code ? planMap[code + '|' + norm(x.major)] : 0;
+    var planHtml;
+    if (plan) planHtml = '<span style="color:#2E7D5B">2026 该专业计划 <b>' + plan + '</b> 人</span>';
+    else if (code) planHtml = '<span style="color:var(--ink-3)">2026 该专业未招生</span>';
+    else planHtml = '<span style="color:var(--ink-3)">2026 该校无招生计划</span>';
+
+    el.innerHTML =
+      '<div class="l1">' +
+        '<div class="school">' + DB.esc(x.school) + '</div>' +
+        '<div class="score">' + x.score + '</div>' +
+      '</div>' +
+      '<div class="l2">' +
+        '<span>' + DB.esc(x.major) + '</span>' +
+        '<span class="dot">·</span>' +
+        '<span class="tag brand">' + DB.esc(x.cat) + '</span>' +
+        lineHtml + diffHtml +
+      '</div>' +
+      '<div class="l2" style="margin-top:6px;font-size:11.5px">' + planHtml + '</div>';
+    return el;
+  }
+
+  function apply() {
+    var kw = state.kw.trim().toLowerCase();
+    items = S.filter(function (x) {
+      if (state.cat && x.cat !== state.cat) return false;
+      if (kw && (x.school + x.major + x.cat).toLowerCase().indexOf(kw) < 0) return false;
+      if (state.score > 0 && x.score > state.score) return false;
+      return true;
+    }).sort(function (a, b) {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.school.localeCompare(b.school, 'zh');
+    });
+
+    // 提示条
+    if (state.score > 0) {
+      var hit = items.length;
+      hintEl.style.display = '';
+      hintEl.innerHTML = '按 <b>' + state.score + ' 分</b> 筛出 <b>' + hit + '</b> 个可以投档的「院校 + 专业」' +
+        (state.cat ? '（' + DB.esc(state.cat) + '）' : '') +
+        '。投档线 ≤ 你的分数就算够线，但够线不等于稳，还要看当年计划和报考人数。';
+    } else {
+      hintEl.style.display = 'none';
+    }
+
+    emptyEl.style.display = items.length ? 'none' : '';
+    pager = DB.paged(listEl, items, renderOne, 40, moreBtn);
+  }
+
+  var t = null;
+  document.getElementById('kw').addEventListener('input', function (e) {
+    clearTimeout(t);
+    var v = e.target.value;
+    t = setTimeout(function () { state.kw = v; apply(); }, 160);
+  });
+  document.getElementById('myScore').addEventListener('input', function (e) {
+    clearTimeout(t);
+    var v = parseInt(e.target.value, 10);
+    t = setTimeout(function () { state.score = (isFinite(v) && v > 0) ? v : 0; apply(); }, 220);
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>

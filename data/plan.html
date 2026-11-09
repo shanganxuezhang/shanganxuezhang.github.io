@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF7F1">
+<title>2026 招生计划 · 江苏专转本</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/app.css">
+<style>
+  .switch { display: flex; gap: 6px; background: var(--bg-soft); border-radius: 10px; padding: 4px; margin-bottom: 12px; }
+  .switch div { flex: 1; text-align: center; padding: 7px; border-radius: 8px; font-size: 13.5px; color: var(--ink-2); }
+  .switch div.on { background: var(--card); color: var(--brand-deep); font-weight: 650; box-shadow: 0 1px 4px rgba(120,92,60,.1); }
+  .sum { display: flex; gap: 14px; font-size: 12.5px; color: var(--ink-2); padding: 10px 14px; background: var(--card); border-radius: 11px; margin-bottom: 12px; box-shadow: var(--shadow); flex-wrap: wrap; }
+  .sum b { color: var(--brand-deep); font-size: 15px; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="back">‹</div>
+  <h1>2026 招生计划</h1>
+  <div class="sub" id="cnt"></div>
+</div>
+
+<div class="wrap">
+
+  <div class="search">
+    <span class="mag">🔍</span>
+    <input id="kw" type="search" placeholder="搜院校或专业，如「金陵科技」「会计」" autocomplete="off">
+  </div>
+
+  <div class="switch" id="sw">
+    <div class="on" data-m="major">按专业看</div>
+    <div data-m="school">按院校看</div>
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <div class="sum" id="sum"></div>
+
+  <div id="list"></div>
+  <button class="more" id="more" style="display:none"></button>
+  <div class="empty" id="empty" style="display:none">没有符合条件的计划</div>
+
+  <div class="note">
+    <b>计划数</b>含普通批次和建档立卡专项批次。计划数多不代表好考，还要看报考人数和历年投档线。
+    <b>学费</b>是官方公布的每年学费，民办与独立学院普遍在 1.8–2.9 万/年，公办多在 5200–6800/年。
+  </div>
+
+</div>
+
+<div class="foot">
+  <div>数据来源：江苏省教育考试院《2026 年江苏省普通高校「专转本」专业计划表》</div>
+</div>
+
+<script src="data/plan-major.js"></script>
+<script src="data/plan-school.js"></script>
+<script src="data/province-line.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var M = window.DATA_MAJOR, SCHOOL = window.DATA_SCHOOL, LINE = window.DATA_LINE;
+  var state = { cat: DB.qs('cat') || '', kw: '', mode: 'major' };
+  var items = [], moreBtn = document.getElementById('more');
+  var listEl = document.getElementById('list'), emptyEl = document.getElementById('empty');
+
+  var schoolMeta = {};
+  SCHOOL.y2026.forEach(function (s) { schoolMeta[s.name] = s; });
+
+  var lineMap = {};
+  LINE.list.forEach(function (p) { lineMap[p.name] = p.y2026; });
+
+  var cats = DB.CATS.filter(function (c) { return M.some(function (x) { return x.cat === c; }); });
+  DB.renderChips(document.getElementById('chips'), cats, state.cat, function (c) { state.cat = c; apply(); }, '全部类别');
+
+  // 模式切换
+  document.getElementById('sw').addEventListener('click', function (e) {
+    var d = e.target.closest('[data-m]');
+    if (!d) return;
+    var m = d.getAttribute('data-m');
+    if (m === state.mode) return;
+    state.mode = m;
+    this.querySelectorAll('div').forEach(function (x) { x.classList.toggle('on', x === d); });
+    apply();
+  });
+
+  function feeColor(f) {
+    if (f >= 18000) return '#C0392B';
+    if (f >= 10000) return '#B07B2A';
+    return 'var(--ink-2)';
+  }
+
+  function majorRow(x) {
+    var el = document.createElement('div');
+    el.className = 'row';
+    var line = lineMap[x.cat];
+    el.innerHTML =
+      '<div class="l1">' +
+        '<div class="school">' + DB.esc(x.school) + '</div>' +
+        '<div class="score" style="font-size:17px">' + x.plan + '<span style="font-size:11px;font-weight:500;color:var(--ink-3)"> 人</span></div>' +
+      '</div>' +
+      '<div class="l2">' +
+        '<span>' + DB.esc(x.major) + '</span>' +
+        '<span class="dot">·</span>' +
+        '<span class="tag brand">' + DB.esc(x.cat) + '</span>' +
+        (x.batch === '专项' ? '<span class="tag">建档立卡</span>' : '') +
+      '</div>' +
+      '<div class="l2" style="margin-top:6px;font-size:11.5px">' +
+        '<span style="color:' + feeColor(x.fee) + '">学费 ' + DB.fmtMoney(x.fee) + ' 元/年</span>' +
+        (line ? '<span class="dot">·</span><span style="color:var(--ink-3)">2026 省控 ' + line + '</span>' : '') +
+      '</div>';
+    return el;
+  }
+
+  function schoolRow(x) {
+    var el = document.createElement('div');
+    el.className = 'row';
+    var meta = schoolMeta[x.school] || {};
+    var fees = x.majors.map(function (m) { return m.fee; }).filter(function (f) { return f > 0; });
+    var fmin = fees.length ? Math.min.apply(null, fees) : 0;
+    var fmax = fees.length ? Math.max.apply(null, fees) : 0;
+    var feeTxt = fmin === fmax ? DB.fmtMoney(fmin) : DB.fmtMoney(fmin) + '–' + DB.fmtMoney(fmax);
+    // 专业数要按专业名去重：同一专业若同时有「普通批次」和「建档立卡专项」两条记录，
+    // 直接取数组长度会把一个专业算成两个
+    var names = [];
+    x.majors.forEach(function (m) { if (names.indexOf(m.major) < 0) names.push(m.major); });
+
+    el.innerHTML =
+      '<div class="l1">' +
+        '<div class="school">' + DB.esc(x.school) + '</div>' +
+        '<div class="score" style="font-size:17px">' + DB.fmtInt(x.total) + '<span style="font-size:11px;font-weight:500;color:var(--ink-3)"> 人</span></div>' +
+      '</div>' +
+      '<div class="l2">' +
+        '<span class="tag">院校代号 ' + DB.esc(meta.code || '') + '</span>' +
+        '<span class="tag">' + names.length + ' 个专业</span>' +
+        (meta.special ? '<span class="tag">专项 ' + meta.special + '</span>' : '') +
+      '</div>' +
+      '<div class="l2" style="margin-top:6px;font-size:11.5px;color:var(--ink-3)">' +
+        '<span>学费 ' + feeTxt + ' 元/年</span>' +
+        (meta.phone ? '<span class="dot">·</span><span>' + DB.esc(meta.phone) + '</span>' : '') +
+      '</div>' +
+      '<div class="l2" style="margin-top:6px;font-size:11.5px;color:var(--ink-3);display:block;line-height:1.5">' +
+        DB.esc(names.slice(0, 6).join('、')) +
+        (names.length > 6 ? ' 等' : '') +
+      '</div>';
+    return el;
+  }
+
+  function apply() {
+    var kw = state.kw.trim().toLowerCase();
+    var arr = M.filter(function (x) {
+      if (state.cat && x.cat !== state.cat) return false;
+      if (kw && (x.school + x.major).toLowerCase().indexOf(kw) < 0) return false;
+      return true;
+    });
+
+    var sumEl = document.getElementById('sum');
+    var totalPlan = arr.reduce(function (a, b) { return a + b.plan; }, 0);
+    document.getElementById('cnt').textContent = arr.length + ' 个专业';
+
+    if (state.mode === 'major') {
+      arr.sort(function (a, b) {
+        var c = DB.catOrder(a.cat) - DB.catOrder(b.cat);
+        if (c) return c;
+        if (a.school !== b.school) return a.school.localeCompare(b.school, 'zh');
+        return b.plan - a.plan;
+      });
+      items = arr;
+      sumEl.innerHTML = '<span>专业数 <b>' + arr.length + '</b></span>' +
+        '<span>计划合计 <b>' + DB.fmtInt(totalPlan) + '</b> 人</span>' +
+        '<span>院校 <b>' + new Set(arr.map(function (x) { return x.school; })).size + '</b> 所</span>';
+      DB.paged(listEl, items, majorRow, 40, moreBtn);
+    } else {
+      // 按院校聚合
+      var bySchool = {};
+      arr.forEach(function (x) {
+        if (!bySchool[x.school]) bySchool[x.school] = { school: x.school, total: 0, majors: [] };
+        bySchool[x.school].total += x.plan;
+        bySchool[x.school].majors.push(x);
+      });
+      items = Object.keys(bySchool).map(function (k) { return bySchool[k]; })
+        .sort(function (a, b) { return b.total - a.total; });
+      sumEl.innerHTML = '<span>院校 <b>' + items.length + '</b> 所</span>' +
+        '<span>计划合计 <b>' + DB.fmtInt(items.reduce(function (a, b) { return a + b.total; }, 0)) + '</b> 人</span>';
+      DB.paged(listEl, items, schoolRow, 30, moreBtn);
+    }
+
+    emptyEl.style.display = items.length ? 'none' : '';
+  }
+
+  var t = null;
+  document.getElementById('kw').addEventListener('input', function (e) {
+    clearTimeout(t);
+    var v = e.target.value;
+    t = setTimeout(function () { state.kw = v; apply(); }, 160);
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>

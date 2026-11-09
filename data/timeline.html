@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF7F1">
+<title>全年时间轴 · 江苏专转本</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="back">‹</div>
+  <h1>全年时间轴</h1>
+  <div class="sub">三年制专转本</div>
+</div>
+
+<div class="wrap">
+
+  <div class="note">
+    <b>重要节点</b>：1 月报名填志愿 → 3 月考试 → 4 月出分。错过报名就没有补救机会，志愿填报和报名同一个窗口，
+    一定要在 1 月把这两件事一起做完。
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">按月看 <span class="hint">核心节点</span></div>
+    <div id="tl"></div>
+  </div>
+
+  <div class="note" id="detail"></div>
+
+  <div class="note">
+    <b>提醒</b>：以上为常规时间安排，每年具体日期以江苏省教育考试院当年公告为准，可能因节假日或政策调整前后浮动几天。
+    计算机一级和英语四六级虽然是「加分项」而非硬门槛，但部分本科院校在专业报考要求里会提到，别拖到最后一年才考。
+  </div>
+
+</div>
+
+<div class="foot">
+  <div>数据来源：江苏省教育考试院年度工作安排</div>
+</div>
+
+<script src="data/timeline.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var T = window.DATA_TIME;
+  var root = document.getElementById('tl');
+
+  var catColor = {
+    '专转本': 'var(--brand-soft)',
+    '退役士兵': '#EEF0E4',
+    '英语四六级': '#E9EFF4',
+    '计算机一级': '#F3EBF5'
+  };
+  var catInk = {
+    '专转本': 'var(--brand-deep)',
+    '退役士兵': '#6B6A3A',
+    '英语四六级': '#31586E',
+    '计算机一级': '#6A4374'
+  };
+
+  var byMonth = {};
+  T.forEach(function (x) {
+    if (!byMonth[x.month]) byMonth[x.month] = [];
+    byMonth[x.month].push(x);
+  });
+
+  var months = Object.keys(byMonth).map(Number).sort(function (a, b) { return a - b; });
+
+  // 只显示有事件的月份，中间空月跳过（但保留月份数字，方便看节奏）
+  root.innerHTML = months.map(function (m) {
+    var items = byMonth[m];
+    return '<div class="tl-month">' +
+      '<div class="tl-head"><div class="m">' + m + '月</div></div>' +
+      items.map(function (x) {
+        var bg = catColor[x.cat] || 'var(--bg-soft)';
+        var ink = catInk[x.cat] || 'var(--ink-2)';
+        return '<div class="tl-item">' +
+          '<span class="c" style="background:' + bg + ';color:' + ink + '">' + DB.esc(x.cat) + '</span>' +
+          '<span class="t">' + DB.esc(x.text) + '</span></div>';
+      }).join('') +
+      '</div>';
+  }).join('');
+
+  // 关键提醒
+  var key = T.filter(function (x) { return x.cat === '专转本'; });
+  document.getElementById('detail').innerHTML =
+    '三年制专转本主线共 <b>' + key.length + '</b> 个节点：' +
+    key.map(function (x) { return x.month + '月 ' + x.text; }).join('；') + '。';
+})();
+</script>
+</body>
+</html>

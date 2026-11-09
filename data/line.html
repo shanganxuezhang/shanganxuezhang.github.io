@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF7F1">
+<title>省控线趋势 2023-2026 · 江苏专转本</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="back">‹</div>
+  <h1>省控线趋势</h1>
+  <div class="sub">2023–2026</div>
+</div>
+
+<div class="wrap">
+
+  <div class="note" id="overview"></div>
+
+  <div class="sec">
+    <div class="sec-title">四年对照 <span class="hint">按 2026 分数线从高到低</span></div>
+    <div class="card" style="padding:12px 6px">
+      <div class="tbl-wrap">
+        <table id="tbl"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">涨幅榜 <span class="hint">2026 比 2025</span></div>
+    <div id="rise"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">跌幅榜 <span class="hint">2026 比 2025</span></div>
+    <div id="fall"></div>
+  </div>
+
+  <div class="note">
+    <b>怎么用</b>：省控线是「能不能填志愿」的门槛，不是「能不能被录取」的线。过了省控线只代表你有资格投档，
+    实际录取看的是各校各专业的投档线（去「投档线查询」看）。省控线涨说明这个大类整体竞争加剧。
+  </div>
+
+</div>
+
+<div class="foot">
+  <div>数据来源：江苏省教育考试院历年专转本省控线公告</div>
+</div>
+
+<script src="data/province-line.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var L = window.DATA_LINE;
+  var list = L.list.slice();
+
+  function d(a, b) { return (Number(b) || 0) - (Number(a) || 0); }
+  function dHtml(n) {
+    if (n > 0) return '<span class="delta-up">+' + n + '</span>';
+    if (n < 0) return '<span class="delta-down">' + n + '</span>';
+    return '<span class="delta-flat">±0</span>';
+  }
+
+  // 涨幅 / 跌幅榜（只取有变化的，按幅度排）
+  var withDelta = list.map(function (p) {
+    return { name: p.name, v: p.y2026, prev: p.y2025, delta: d(p.y2025, p.y2026) };
+  }).filter(function (x) { return x.delta !== 0; });
+
+  var rise = withDelta.filter(function (x) { return x.delta > 0; })
+    .sort(function (a, b) { return b.delta - a.delta; }).slice(0, 6);
+  var fall = withDelta.filter(function (x) { return x.delta < 0; })
+    .sort(function (a, b) { return a.delta - b.delta; }).slice(0, 6);
+
+  function rankRow(x) {
+    var max = Math.max.apply(null, withDelta.map(function (y) { return Math.abs(y.delta); }));
+    var w = max ? Math.round(Math.abs(x.delta) / max * 100) : 0;
+    var color = x.delta > 0 ? '#C0392B' : '#2E7D5B';
+    return '<div class="row" style="padding:11px 14px">' +
+      '<div class="l1"><div class="school">' + DB.esc(x.name) + '</div>' +
+      '<div class="score" style="font-size:16px;color:' + color + '">' + (x.delta > 0 ? '+' : '') + x.delta + '</div></div>' +
+      '<div class="l2" style="font-size:11.5px">' + x.prev + ' → ' + x.v + '</div>' +
+      '<div style="height:4px;border-radius:2px;background:var(--bg-soft);margin-top:7px">' +
+      '<div style="height:4px;border-radius:2px;width:' + w + '%;background:' + color + '"></div></div>' +
+      '</div>';
+  }
+
+  document.getElementById('rise').innerHTML = rise.length
+    ? rise.map(rankRow).join('')
+    : '<div class="empty">今年没有上涨的类别</div>';
+  document.getElementById('fall').innerHTML = fall.length
+    ? fall.map(rankRow).join('')
+    : '<div class="empty">今年没有下跌的类别</div>';
+
+  // 表格
+  var sorted = list.slice().sort(function (a, b) { return (b.y2026 || 0) - (a.y2026 || 0); });
+  var ys = L.years;
+  var head = '<thead><tr><th>专业大类</th>' + ys.map(function (y) { return '<th>' + y + '</th>'; }).join('') +
+    '<th>26比25</th></tr></thead>';
+  var body = '<tbody>' + sorted.map(function (p) {
+    var dv = d(p.y2025, p.y2026);
+    return '<tr><td>' + DB.esc(p.name) + '</td>' +
+      ys.map(function (y, i) {
+        var v = p['y' + y] || 0;
+        var bold = i === ys.length - 1 ? ' style="font-weight:700"' : '';
+        return '<td class="num"' + bold + '>' + v + '</td>';
+      }).join('') +
+      '<td class="num">' + dHtml(dv) + '</td></tr>';
+  }).join('') + '</tbody>';
+  document.getElementById('tbl').innerHTML = head + body;
+
+  // 概览
+  var upN = withDelta.filter(function (x) { return x.delta > 0; }).length;
+  var downN = withDelta.filter(function (x) { return x.delta < 0; }).length;
+  var flatN = list.length - upN - downN;
+  var topRise = rise[0], topFall = fall[0];
+  var txt = '<b>' + ys[ys.length - 2] + ' → ' + ys[ys.length - 1] + '</b>：' +
+    upN + ' 个类别上涨、' + downN + ' 个下跌、' + flatN + ' 个持平。';
+  if (topRise) txt += '涨得最狠的是 <b>' + DB.esc(topRise.name) + '</b>（+' + topRise.delta + ' 分，' + topRise.prev + '→' + topRise.v + '）。';
+  if (topFall) txt += '跌得最多的是 <b>' + DB.esc(topFall.name) + '</b>（' + topFall.delta + ' 分，' + topFall.prev + '→' + topFall.v + '）。';
+  document.getElementById('overview').innerHTML = txt;
+})();
+</script>
+</body>
+</html>
