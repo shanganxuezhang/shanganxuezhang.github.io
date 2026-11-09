@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>尚岸学长的资料库 · 专转本高数真题</title>
+<meta name="description" content="尚岸学长的资料库：江苏省普通高校专转本选拔考试高等数学真题，含答案与完整解析。">
+<meta name="theme-color" content="#F97316">
+<link rel="stylesheet" href="assets/style.css">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] },
+  startup: { typeset: false }
+};
+</script>
+<script src="assets/mathjax/tex-svg.js" id="MathJax-script" async></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html"><span class="mark">尚</span>尚岸学长的资料库</a>
+    <nav class="topnav" id="nav">
+      <a href="paper.html?y=2022" data-y="2022">2022</a>
+      <a href="paper.html?y=2023" data-y="2023">2023</a>
+      <a href="paper.html?y=2024" data-y="2024">2024</a>
+      <a href="paper.html?y=2025" data-y="2025">2025</a>
+      <a href="paper.html?y=2026" data-y="2026">2026</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap" id="app">
+  <div class="loading">正在加载试卷…</div>
+</div>
+
+<button class="totop" id="totop" title="回到顶部">↑</button>
+
+<script>
+(function () {
+  'use strict';
+
+  var YEARS = ['2022', '2023', '2024', '2025', '2026'];
+  var qs = new URLSearchParams(location.search);
+  var year = qs.get('y') || '2026';
+  if (YEARS.indexOf(year) < 0) year = '2026';
+  var showAns = qs.get('a') === '1';
+
+  document.title = year + ' 年江苏专转本高等数学真题 · 尚岸学长的资料库';
+
+  /* 顶部年份高亮 */
+  Array.prototype.forEach.call(document.querySelectorAll('#nav a'), function (a) {
+    if (a.getAttribute('data-y') === year) {
+      a.className = 'on';
+    } else {
+      a.setAttribute('href', 'paper.html?y=' + a.getAttribute('data-y'));
+    }
+  });
+
+  var app = document.getElementById('app');
+
+  /* ---------- 工具 ---------- */
+  /* 数据里的 < > & 全是数学符号（如 0<x<1、矩阵的 & 分列符），
+     不转义会被浏览器当成 HTML 标签吃掉，导致 $ 配对断裂、公式渲染不出来。
+     注意：MathJax 读的是 textContent，转义后仍是原始 LaTeX，不影响排版。 */
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  var MATH_RE = /\$\$[\s\S]*?\$\$|\$[^$\n]*\$/g;
+
+  /* 纯文本段：转义 + 空行变段间距
+     纯空白段（多为两段公式之间）不能变成 <br>，否则公式块之间会多一条空行 */
+  function textSeg(t) {
+    if (!t.trim()) {
+      return t.indexOf('\n\n') >= 0 ? '<span class="pgap"></span>' : ' ';
+    }
+    return esc(t)
+      .replace(/\n{2,}/g, '<span class="pgap"></span>')
+      .replace(/\n/g, '<br>');
+  }
+
+  /* 按“数学段 / 文本段”切开分别处理，避免把 <span> 塞进公式里把公式搞坏。
+     **加粗** 要在拼装后再配对，否则跨公式的粗体（如 **由 $\alpha_{4}$ 可表示**）会断。 */
+  function inlineRich(s) {
+    s = String(s == null ? '' : s);
+    var out = '', last = 0, m;
+    MATH_RE.lastIndex = 0;
+    while ((m = MATH_RE.exec(s)) !== null) {
+      out += textSeg(s.slice(last, m.index));
+      out += esc(m[0]);
+      last = m.index + m[0].length;
+    }
+    out += textSeg(s.slice(last));
+    return out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  }
+
+  /* markdown 表格 → 真表格（单元格内容仍走 inlineRich，公式照样渲染） */
+  function renderTable(rows) {
+    var cells = rows.map(function (r) {
+      return r.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(function (c) {
+        return c.trim();
+      });
+    }).filter(function (r) {
+      return !r.every(function (c) { return /^:?-{2,}:?$/.test(c); });
+    });
+    if (!cells.length) return '';
+    var head = cells[0], body = cells.slice(1);
+    var h = '<div class="tbl"><table><thead><tr>';
+    head.forEach(function (c) { h += '<th>' + inlineRich(c) + '</th>'; });
+    h += '</tr></thead><tbody>';
+    body.forEach(function (r) {
+      h += '<tr>';
+      r.forEach(function (c) { h += '<td>' + inlineRich(c) + '</td>'; });
+      h += '</tr>';
+    });
+    return h + '</tbody></table></div>';
+  }
+
+  function rich(s) {
+    s = String(s == null ? '' : s);
+    var lines = s.split('\n'), out = [], buf = [], table = null;
+    function flush() {
+      if (buf.length) { out.push(inlineRich(buf.join('\n'))); buf = []; }
+    }
+    lines.forEach(function (L) {
+      if (/^\s*\|/.test(L)) {
+        if (!table) { flush(); table = []; }
+        table.push(L);
+      } else {
+        if (table) { out.push(renderTable(table)); table = null; }
+        buf.push(L);
+      }
+    });
+    if (table) out.push(renderTable(table));
+    flush();
+    return out.join('');
+  }
+
+  var LETTER = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  /* 答案速查：选择题给字母，填空题给式子。放在卷末，默认展开答案后才出现 */
+  function buildAnsBox(paper) {
+    var rows = [];
+    paper.sections.forEach(function (sec) {
+      var isChoice = /选择/.test(sec.name);
+      var isBlank = /填空/.test(sec.name);
+      if (!isChoice && !isBlank) return;
+      var cells = sec.items.map(function (it) {
+        return '<span class="cell"><span style="color:#9B9B9B">' + it.no + '.</span> ' +
+          (isChoice ? '<b>' + esc(it.answer) + '</b>' : rich(it.answer)) + '</span>';
+      });
+      rows.push('<div class="row"><b>' + esc(sec.name.replace(/^[一二三四五]、/, '')) + '</b>　' + cells.join('') + '</div>');
+    });
+    if (!rows.length) return '';
+    return '<div class="ansblock"><h2>答案速查</h2>' +
+      '<p class="sub">只想快速核对选择题和填空题的话看这里；计算题、证明题的过程在上面每道题的解析里。</p>' +
+      '<div class="ansbox" id="ansbox">' + rows.join('') + '</div></div>';
+  }
+
+  /* 渲染单题 */
+  function renderItem(it, isChoice) {
+    var h = '<div class="q" id="q' + it.no + '">';
+    h += '<div class="stem"><span class="qn">' + it.no + '.</span>' + rich(it.stem) + '</div>';
+    if (isChoice && it.options && it.options.length) {
+      h += '<div class="opts">';
+      it.options.forEach(function (op, i) {
+        h += '<div><span class="k">' + LETTER[i] + '.</span>' + rich(op) + '</div>';
+      });
+      h += '</div>';
+    }
+    h += '<div class="sol">';
+    if (it.answer) {
+      h += '<div><span class="anstag">答案</span><span>' + rich(it.answer) + '</span></div>';
+    }
+    if (it.solution) {
+      h += '<div class="solbody"><span class="lab">解析</span><span>' + rich(it.solution) + '</span></div>';
+    }
+    h += '</div></div>';
+    return h;
+  }
+
+  /* ---------- 主渲染 ---------- */
+  function render(paper) {
+    var total = 0;
+    paper.sections.forEach(function (s) { total += s.items.length; });
+
+    var h = '';
+    h += '<div class="paper-head">';
+    h += '<h1>' + paper.year + ' 年江苏专转本高等数学真题</h1>';
+    h += '<p class="meta">江苏省普通高校“专转本”选拔考试<i>·</i>满分 ' + paper.full + ' 分<i>·</i>' + paper.minutes + ' 分钟<i>·</i>共 ' + total + ' 题</p>';
+    h += '<div class="rule"></div>';
+    h += '</div>';
+
+    h += '<div class="toolbar">';
+    h += '<button class="btn primary" id="toggle">显示答案与解析</button>';
+    h += '<button class="btn" id="print">打印 / 存 PDF</button>';
+    h += '<a class="btn" href="index.html">换一年</a>';
+    h += '<span class="spacer"></span>';
+    h += '<span class="hint">先计时 ' + paper.minutes + ' 分钟闭卷做完，再对答案</span>';
+    h += '</div>';
+
+    if (paper.note) {
+      h += '<div class="notebox">' + rich(paper.note) + '</div>';
+    }
+
+    paper.sections.forEach(function (sec) {
+      var isChoice = /选择/.test(sec.name);
+      h += '<div class="sec">';
+      h += '<h2>' + esc(sec.name) + (sec.note ? '<em>' + esc(sec.note) + '</em>' : '') + '</h2>';
+      sec.items.forEach(function (it) {
+        h += renderItem(it, isChoice);
+      });
+      h += '</div>';
+    });
+
+    /* 答案速查放卷末，避免一进页面就看到答案 */
+    h += buildAnsBox(paper);
+
+    h += '<div class="paper-foot">' + paper.year + ' 年卷 · 共 ' + total + ' 题 · 答案解析已按最新考纲核对<br>' +
+         '<a href="index.html">返回真题列表</a></div>';
+
+    app.innerHTML = h;
+
+    /* 答案展开状态 */
+    var toggle = document.getElementById('toggle');
+    function applyState() {
+      document.body.classList[showAns ? 'add' : 'remove']('show-answer');
+      toggle.textContent = showAns ? '收起答案' : '显示答案与解析';
+      toggle.className = 'btn ' + (showAns ? 'on' : 'primary');
+    }
+    applyState();
+
+    toggle.addEventListener('click', function () {
+      showAns = !showAns;
+      var u = new URL(location.href);
+      if (showAns) u.searchParams.set('a', '1'); else u.searchParams.delete('a');
+      history.replaceState(null, '', u.toString());
+      applyState();
+    });
+
+    document.getElementById('print').addEventListener('click', function () {
+      var was = showAns;
+      showAns = true;
+      applyState();
+      setTimeout(function () { window.print(); }, 60);
+      window.addEventListener('afterprint', function once() {
+        window.removeEventListener('afterprint', once);
+        showAns = was;
+        applyState();
+      });
+    });
+  }
+
+  /* ---------- 载入数据 ---------- */
+  function typeset() {
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([app]).catch(function (e) { console.warn(e); });
+    } else {
+      setTimeout(typeset, 120);
+    }
+  }
+
+  var s = document.createElement('script');
+  s.src = 'data/' + year + '.js';
+  s.onload = function () {
+    var paper = window.PAPERS && window.PAPERS[year];
+    if (!paper) {
+      app.innerHTML = '<div class="loading">这一年（' + year + '）的数据没加载成功，回<a href="index.html">首页</a>重试。</div>';
+      return;
+    }
+    render(paper);
+    typeset();
+  };
+  s.onerror = function () {
+    app.innerHTML = '<div class="loading">试卷数据读取失败，请检查网络后刷新，或回<a href="index.html">首页</a>换一年。</div>';
+  };
+  document.head.appendChild(s);
+
+  /* 回顶 */
+  var top = document.getElementById('totop');
+  window.addEventListener('scroll', function () {
+    top.classList[window.scrollY > 600 ? 'add' : 'remove']('show');
+  });
+  top.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>
