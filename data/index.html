@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FBF7F1">
 <title>江苏专转本数据站 · 省控线 / 投档线 / 招生计划</title>
-<meta name="description" content="江苏三年制专转本真实数据：2023-2026 省控线、2025 全量投档分数线、2026 招生计划、江苏大专院校名录。全部来自官方公开文件。">
+<meta name="description" content="江苏三年制专转本真实数据：2023-2026 省控线、2026 全量投档分数线、2026 招生计划。全部来自官方公开文件。">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/app.css">
 </head>
@@ -16,7 +16,7 @@
   <div class="hero">
     <div class="kicker">江苏 · 三年制专转本</div>
     <div class="title">转本数据站</div>
-    <div class="desc">省控线 · 投档线 · 招生计划 · 院校库，一手官方数据</div>
+    <div class="desc">省控线 · 投档线 · 招生计划，一手官方数据</div>
     <div class="kpi-grid" id="kpi"></div>
   </div>
 
@@ -33,7 +33,7 @@
 
 <div class="foot">
   <div>江苏专转本数据站 · 数据仅供志愿参考</div>
-  <div class="src">投档线为 2025 年实际投档结果，2026 年计划为官方公布计划数</div>
+  <div class="src">投档线与 2026 年招生计划均为官方公布数据</div>
   <div style="margin-top:12px"><a href="/">← 回高数真题</a></div>
 </div>
 
@@ -41,12 +41,11 @@
 <script src="data/plan-school.js"></script>
 <script src="data/plan-major.js"></script>
 <script src="data/score.js"></script>
-<script src="data/colleges.js"></script>
 <script src="assets/app.js"></script>
 <script>
 (function () {
   var L = window.DATA_LINE, P = window.DATA_SCHOOL, M = window.DATA_MAJOR;
-  var S = window.DATA_SCORE, C = window.DATA_COLLEGE;
+  var S = window.DATA_SCORE;
   var t26 = P.y2026.reduce(function (a, b) { return a + b.total; }, 0);
   var t25 = P.y2025.reduce(function (a, b) { return a + b.total; }, 0);
   var diff = t26 - t25;
@@ -66,7 +65,7 @@
     '<div class="d flat">2025 年为 ' + P.y2025.length + ' 所</div></div>',
 
     '<div class="kpi"><div class="v">' + S.length + '<small>条</small></div>',
-    '<div class="l">2025 投档线记录</div>',
+    '<div class="l">2026 投档线记录</div>',
     '<div class="d flat">覆盖 ' + new Set(S.map(function (x) { return x.cat; })).size + ' 个专业大类</div></div>',
 
     '<div class="kpi"><div class="v">' + L.years.length + '<small>年</small></div>',
@@ -75,12 +74,10 @@
   ].join('');
 
   var entries = [
-    { href: 'score.html', ico: '🎯', n: '投档线查询', s: '2025 全量 ' + S.length + ' 条，按分数反查能上哪些学校' },
+    { href: 'score.html', ico: '🎯', n: '投档线查询', s: '2026 全量 ' + S.length + ' 条，按分数反查能上哪些学校' },
     { href: 'line.html', ico: '📈', n: '省控线趋势', s: L.years[0] + '–' + L.years[L.years.length - 1] + ' 四年对比，哪个大类在涨' },
     { href: 'plan.html', ico: '📋', n: '2026 招生计划', s: P.y2026.length + ' 所院校 ' + M.length + ' 个专业，含学费' },
-    { href: 'compare.html', ico: '⚖️', n: '扩招缩招对比', s: '哪所学校今年扩了、哪所缩了，一目了然' },
-    { href: 'schools.html', ico: '🏫', n: '江苏大专院校', s: C.length + ' 所专科院校，按地市 / 办学性质查' },
-    { href: 'timeline.html', ico: '🗓', n: '全年时间轴', s: '报名、考试、出分、四六级、计算机一级' }
+    { href: 'compare.html', ico: '⚖️', n: '扩招缩招对比', s: '哪所学校今年扩了、哪所缩了，一目了然' }
   ];
   document.getElementById('entries').innerHTML = entries.map(function (e) {
     return '<a class="entry" href="' + e.href + '">' +

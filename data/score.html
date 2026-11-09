@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FBF7F1">
-<title>2025 投档线查询 · 江苏专转本</title>
+<title>2026 投档线查询 · 江苏专转本</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/app.css">
 </head>
@@ -13,7 +13,7 @@
 <div class="topbar">
   <div class="back">‹</div>
   <h1>投档线查询</h1>
-  <div class="sub">2025 年</div>
+  <div class="sub">2026 年</div>
 </div>
 
 <div class="wrap">
@@ -40,8 +40,8 @@
 </div>
 
 <div class="foot">
-  <div>投档线为 2025 年平行志愿实际投档结果</div>
-  <div class="src">来源：江苏省教育考试院《2025 年专转本选拔考试平行志愿院校（专业）投档分数线》</div>
+  <div>投档线为 2026 年平行志愿实际投档结果</div>
+  <div class="src">来源：江苏省教育考试院《2026 年专转本选拔考试平行志愿院校（专业）投档分数线》</div>
 </div>
 
 <script src="data/score.js"></script>
@@ -55,9 +55,9 @@
   var LINE = window.DATA_LINE, SCHOOL = window.DATA_SCHOOL, MAJOR = window.DATA_MAJOR;
 
   var lineMap = {};
-  LINE.list.forEach(function (p) { lineMap[p.name] = p.y2025; });
+  LINE.list.forEach(function (p) { lineMap[p.name] = p.y2026; });
 
-  // 2026 该「院校 + 专业」的实际计划数（不是全校总数 —— 显示全校数会让人误以为
+  // 该「院校 + 专业」2026 年的实际计划数（不是全校总数 —— 显示全校数会让人误以为
   // 这个专业招那么多人，直接影响志愿判断，所以必须精确到专业，并对专业名做去空格归一，
   // 因为官方表里「学前教育 (师范)」和「学前教育(师范)」两种写法都存在）
   var norm = function (s) { return String(s || '').replace(/[\s\u3000（）()]/g, ''); };
@@ -65,14 +65,6 @@
   MAJOR.forEach(function (m) {
     var k = m.code + '|' + norm(m.major);
     planMap[k] = (planMap[k] || 0) + m.plan;
-  });
-  // 院校名 → 代号（投档线表只有名字，专业计划表有代号）
-  // 2025 的「江苏科技大学（张家港校区）」2026 已并入「江苏科技大学」，不加别名会误判成停招
-  var ALIAS = { '江苏科技大学（张家港校区）': '江苏科技大学', '常熟理工学院': '苏州工学院' };
-  var nameToCode = {};
-  SCHOOL.y2026.forEach(function (s) { nameToCode[s.name] = s.code; });
-  Object.keys(ALIAS).forEach(function (old) {
-    if (nameToCode[ALIAS[old]]) nameToCode[old] = nameToCode[ALIAS[old]];
   });
 
   var state = { cat: DB.qs('cat') || '', kw: '', score: 0 };
@@ -111,13 +103,12 @@
     var line = lineMap[x.cat];
     var lineHtml = line ? '<span class="tag">省控 ' + line + '</span>' : '';
 
-    // 该专业 2026 计划：优先用 2026 院校名（改名后）去查，查不到再用 2025 原名
-    var code = nameToCode[x.school];
-    var plan = code ? planMap[code + '|' + norm(x.major)] : 0;
-    var planHtml;
-    if (plan) planHtml = '<span style="color:#2E7D5B">2026 该专业计划 <b>' + plan + '</b> 人</span>';
-    else if (code) planHtml = '<span style="color:var(--ink-3)">2026 该专业未招生</span>';
-    else planHtml = '<span style="color:var(--ink-3)">2026 该校无招生计划</span>';
+    // 该专业 2026 计划：投档线表自带院校代号，直接按代号查，不再靠院校名猜
+    // （2025 那份表只有院校名，还带改名错位，才需要别名映射；2026 表有代号就没这问题）
+    var plan = planMap[x.code + '|' + norm(x.major)] || 0;
+    var planHtml = plan
+      ? '<span style="color:#2E7D5B">2026 同专业计划 <b>' + plan + '</b> 人</span>'
+      : '<span style="color:var(--ink-3)">2026 该专业未招生</span>';
 
     el.innerHTML =
       '<div class="l1">' +
