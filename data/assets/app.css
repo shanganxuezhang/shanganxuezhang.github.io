@@ -244,34 +244,79 @@ td.num { font-variant-numeric: tabular-nums; }
 }
 .foot .src { margin-top: 2px; }
 
-/* ---------- 联系方式（每页自动插在页脚上方） ---------- */
-.wxcard {
-  box-sizing: border-box;
-  width: calc(100% - 32px); max-width: 688px; margin: 4px auto 8px; padding: 14px 16px;
-  display: flex; align-items: center; gap: 12px;
-  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
-  border: 1px solid #F6DDBF; border-radius: 16px;
-  box-shadow: 0 2px 10px rgba(194, 90, 40, .07);
+/* ---------- 加微信：首屏大卡 ---------- */
+.wxhero {
+  margin: 0 0 14px; padding: 15px 16px 14px;
+  border-radius: 18px; color: #fff;
+  background: linear-gradient(135deg, #C25A28 0%, #E08A52 100%);
+  box-shadow: 0 6px 20px rgba(194, 90, 40, .22);
 }
-.wxcard .ico {
-  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px;
-  background: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 20px; line-height: 1;
+.wxhero-top { display: flex; align-items: center; gap: 10px; }
+.wxhero-ico {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: 11px;
+  background: rgba(255, 255, 255, .22); display: flex; align-items: center;
+  justify-content: center; font-size: 18px; line-height: 1;
 }
-.wxcard .txt { flex: 1; min-width: 0; }
-.wxcard .t1 { font-size: 11.5px; color: #B45309; letter-spacing: .3px; }
-.wxcard .t2 {
-  font-size: 15.5px; font-weight: 700; color: #9A3412; letter-spacing: .6px;
+.wxhero-t { font-size: 16.5px; font-weight: 750; letter-spacing: .3px; }
+.wxhero-s { font-size: 11.5px; color: rgba(255, 255, 255, .82); margin-top: 1px; }
+.wxhero-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 11px 0 12px; }
+.wxhero-tag {
+  font-size: 11.5px; line-height: 1; padding: 6px 10px; border-radius: 999px;
+  background: rgba(255, 255, 255, .2); color: #fff; letter-spacing: .2px;
+}
+.wxhero-act { display: flex; align-items: center; gap: 8px; }
+.wxhero-id {
+  flex: 1; min-width: 0; padding: 9px 12px; border-radius: 11px;
+  background: rgba(255, 255, 255, .95); color: #A8431B;
+  font-size: 15px; font-weight: 700; letter-spacing: .6px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  word-break: break-all;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.wxcard .btn {
-  flex: 0 0 auto; border: 0; border-radius: 10px; padding: 9px 15px;
-  background: var(--brand); color: #fff; font-size: 13px; font-weight: 650;
-  font-family: inherit; cursor: pointer; transition: transform .12s, background .2s;
+.wxhero-btn {
+  flex: 0 0 auto; border: 0; border-radius: 11px; padding: 10px 15px;
+  background: #fff; color: #B4481E; font-size: 13px; font-weight: 750;
+  font-family: inherit; cursor: pointer; transition: transform .12s, background .2s, color .2s;
 }
-.wxcard .btn:active { transform: scale(.95); }
-.wxcard .btn.done { background: #2E7D5B; }
+.wxhero-btn:active { transform: scale(.95); }
+.wxhero-btn.done { background: #2E7D5B; color: #fff; }
+
+/* ---------- 加微信：吸底悬浮条 ---------- */
+.wxbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+  max-width: 720px; margin: 0 auto;
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px calc(9px + env(safe-area-inset-bottom));
+  background: rgba(255, 253, 250, .97);
+  border-top: 1px solid #F0DFC9;
+  box-shadow: 0 -4px 18px rgba(120, 70, 30, .1);
+  backdrop-filter: blur(8px);
+  transform: translateY(110%); transition: transform .28s ease;
+}
+.wxbar.on { transform: translateY(0); }
+.wxbar-ico {
+  flex: 0 0 auto; width: 32px; height: 32px; border-radius: 10px;
+  background: linear-gradient(135deg, #C25A28, #E08A52); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.wxbar-txt { flex: 1; min-width: 0; }
+.wxbar-l1 {
+  font-size: 13px; color: var(--ink); font-weight: 600; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.wxbar-l1 b {
+  color: #B4481E; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: .4px;
+}
+.wxbar-l2 { font-size: 10.5px; color: var(--ink-3); margin-top: 1px; }
+.wxbar-btn {
+  flex: 0 0 auto; border: 0; border-radius: 10px; padding: 9px 14px;
+  background: linear-gradient(135deg, #C25A28, #E08A52); color: #fff;
+  font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
+  transition: transform .12s, background .2s;
+}
+.wxbar-btn:active { transform: scale(.95); }
+.wxbar-btn.done { background: #2E7D5B; }
+body.has-wxbar { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
 
 /* ---------- 深色屏（微信深色模式） ---------- */
 @media (prefers-color-scheme: dark) {
@@ -288,8 +333,6 @@ td.num { font-variant-numeric: tabular-nums; }
   .note { border-left-color: #4A3A29; }
   .search input:focus { border-color: #5A4632; }
   tbody tr + tr td { border-top-color: #2C241C; }
-  .wxcard { background: linear-gradient(135deg, #2A2119 0%, #33251A 100%); border-color: #4A3722; }
-  .wxcard .ico { background: rgba(255, 255, 255, .07); }
-  .wxcard .t1 { color: #D9A06A; }
-  .wxcard .t2 { color: #F0A874; }
+  .wxbar { background: rgba(34, 29, 24, .97); border-top-color: #3D3327; }
+  .wxbar-l1 b { color: #F0A874; }
 }

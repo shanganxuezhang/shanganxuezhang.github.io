@@ -83,8 +83,12 @@
     });
   }
 
-  // ---------- 联系方式（每页自动挂在页脚上方，别在 5 个页面里各写一遍） ----------
+  // ---------- 加微信转化组件 ----------
+  // 老板的要求：不放页脚（页脚没人看），要放最显眼的位置。
+  // 两处：① 首页首屏顶部大卡（带 4 个好处）② 所有页面吸底悬浮条，滑到哪都在。
   var WX_ID = 'shang_an_baaa';
+  var WX_TAGS = ['报课优惠', '资料领取', '志愿填报', '学习陪伴'];
+  var WX_SUB = '报课优惠 · 资料领取 · 志愿填报 · 学习陪伴';
 
   // 复制：https 下优先用 clipboard API；微信内置浏览器经常不给权限，
   // 必须退回 execCommand，再不行就选中号码让用户长按复制（微信号是真实文本，长按一定能选）
@@ -110,38 +114,94 @@
     return legacyCopy(t);
   }
 
-  function mountWx() {
-    var foot = document.querySelector('.foot');
-    if (!foot || document.querySelector('.wxcard')) return;
-    var box = document.createElement('div');
-    box.className = 'wxcard';
-    box.innerHTML =
-      '<div class="ico">💬</div>' +
-      '<div class="txt">' +
-        '<div class="t1">选专业 / 志愿填报拿不准，加微信问我</div>' +
-        '<div class="t2" id="wxid">' + esc(WX_ID) + '</div>' +
-      '</div>' +
-      '<button class="btn" type="button" id="wxcopy">复制</button>';
-    foot.parentNode.insertBefore(box, foot);
-
-    var btn = box.querySelector('#wxcopy');
-    var idEl = box.querySelector('#wxid');
-    btn.addEventListener('click', function () {
+  // 给按钮绑复制，成功后原地反馈；被拦就把号码选中提示长按
+  function bindCopy(btn, idEl) {
+    var label = btn.textContent;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
       copyText(WX_ID).then(function () {
-        btn.textContent = '已复制';
+        btn.textContent = '已复制✓';
         btn.classList.add('done');
-        setTimeout(function () { btn.textContent = '复制'; btn.classList.remove('done'); }, 1800);
+        setTimeout(function () { btn.textContent = label; btn.classList.remove('done'); }, 1800);
       }).catch(function () {
-        // 复制被拦（常见于微信内置浏览器）→ 直接把号码选中，提示长按
+        if (!idEl) return;
         var r = document.createRange();
         r.selectNodeContents(idEl);
         var sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(r);
         btn.textContent = '长按号码';
-        setTimeout(function () { btn.textContent = '复制'; }, 2400);
+        setTimeout(function () { btn.textContent = label; }, 2400);
       });
     });
+  }
+
+  // ① 首屏大卡
+  function buildHero() {
+    var box = document.createElement('div');
+    box.className = 'wxhero';
+    box.innerHTML =
+      '<div class="wxhero-top">' +
+        '<span class="wxhero-ico">🎓</span>' +
+        '<div class="wxhero-tt">' +
+          '<div class="wxhero-t">加学长微信</div>' +
+          '<div class="wxhero-s">转本这条路，有人带少走弯路</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="wxhero-tags">' +
+        WX_TAGS.map(function (t) { return '<span class="wxhero-tag">' + esc(t) + '</span>'; }).join('') +
+      '</div>' +
+      '<div class="wxhero-act">' +
+        '<b class="wxhero-id">' + esc(WX_ID) + '</b>' +
+        '<button class="wxhero-btn" type="button">复制微信号</button>' +
+      '</div>';
+    bindCopy(box.querySelector('.wxhero-btn'), box.querySelector('.wxhero-id'));
+    return box;
+  }
+
+  // ② 吸底条
+  function buildBar() {
+    var bar = document.createElement('div');
+    bar.className = 'wxbar';
+    bar.innerHTML =
+      '<div class="wxbar-ico">🎓</div>' +
+      '<div class="wxbar-txt">' +
+        '<div class="wxbar-l1">加微信 <b>' + esc(WX_ID) + '</b></div>' +
+        '<div class="wxbar-l2">' + esc(WX_SUB) + '</div>' +
+      '</div>' +
+      '<button class="wxbar-btn" type="button">复制</button>';
+    bindCopy(bar.querySelector('.wxbar-btn'), bar.querySelector('.wxbar-l1 b'));
+    return bar;
+  }
+
+  function mountWx() {
+    if (document.querySelector('.wxbar')) return;
+
+    // 首屏大卡：只有带 hero 的首页才放；其它页面一进来就靠吸底条
+    var hero = document.querySelector('.hero');
+    var hasHeroCard = false;
+    if (hero && !document.querySelector('.wxhero')) {
+      hero.parentNode.insertBefore(buildHero(), hero);
+      hasHeroCard = true;
+    }
+
+    var bar = buildBar();
+    document.body.appendChild(bar);
+    document.body.classList.add('has-wxbar');
+
+    // 首屏有大卡时，先让用户看到大卡；大卡滚出视野再抬吸底条，避免同屏两块重复
+    if (hasHeroCard) {
+      var card = document.querySelector('.wxhero');
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) {
+          bar.classList.toggle('on', !entries[0].isIntersecting);
+        }, { threshold: 0 }).observe(card);
+      } else {
+        bar.classList.add('on');
+      }
+    } else {
+      bar.classList.add('on');
+    }
   }
 
   window.DB = {

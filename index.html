@@ -108,64 +108,12 @@
 
 </div>
 
-<div class="wxcard">
-  <div class="wx-ico">💬</div>
-  <div class="wx-txt">
-    <div class="t1">选专业 / 志愿填报拿不准，加微信问我</div>
-    <div class="t2" id="wxid">shang_an_baaa</div>
-  </div>
-  <button class="wx-btn" id="wxcopy" type="button">复制</button>
-</div>
-
 <footer class="foot">
   尚岸学长的资料库 · 江苏专转本高等数学真题 2022–2026<br>
   题目版权归原命题方所有，本站仅作学习交流使用。
 </footer>
 
 <script src="assets/site.js"></script>
-<script>
-(function () {
-  var ID = 'shang_an_baaa';
-  var btn = document.getElementById('wxcopy');
-  var idEl = document.getElementById('wxid');
-  if (!btn) return;
-
-  // https 下优先 clipboard；微信内置浏览器常拦，退回 execCommand，再不行选中号码让用户长按
-  function legacy(t) {
-    return new Promise(function (res, rej) {
-      var ta = document.createElement('textarea');
-      ta.value = t;
-      ta.setAttribute('readonly', '');
-      ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
-      document.body.appendChild(ta);
-      ta.select();
-      ta.setSelectionRange(0, t.length);
-      var ok = false;
-      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-      document.body.removeChild(ta);
-      ok ? res() : rej();
-    });
-  }
-
-  btn.addEventListener('click', function () {
-    var p = (navigator.clipboard && navigator.clipboard.writeText)
-      ? navigator.clipboard.writeText(ID).catch(function () { return legacy(ID); })
-      : legacy(ID);
-    p.then(function () {
-      btn.textContent = '已复制';
-      btn.classList.add('done');
-      setTimeout(function () { btn.textContent = '复制'; btn.classList.remove('done'); }, 1800);
-    }).catch(function () {
-      var r = document.createRange();
-      r.selectNodeContents(idEl);
-      var s = window.getSelection();
-      s.removeAllRanges();
-      s.addRange(r);
-      btn.textContent = '长按号码';
-      setTimeout(function () { btn.textContent = '复制'; }, 2400);
-    });
-  });
-})();
-</script>
+<script src="assets/wx.js"></script>
 </body>
 </html>

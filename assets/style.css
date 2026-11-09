@@ -144,38 +144,94 @@ footer.foot {
   border-top: 1px solid var(--line);
 }
 
-/* ---------- 联系方式（页脚上方，点击复制微信号） ---------- */
-.wxcard {
-  max-width: 832px; margin: 40px auto 0; padding: 16px 20px;
-  display: flex; align-items: center; gap: 14px;
-  background: var(--o-t); border: 1px solid var(--o-line); border-radius: 14px;
+/* ---------- 加微信：首屏大卡 ---------- */
+.wxhero {
+  margin: 24px 0 20px; padding: 16px 18px 15px;
+  border-radius: 16px; color: #fff;
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  box-shadow: 0 6px 22px rgba(249, 115, 22, .22);
 }
-.wxcard .wx-ico {
-  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px;
-  background: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 20px; line-height: 1;
+.wxhero-top { display: flex; align-items: center; gap: 11px; }
+.wxhero-ico {
+  flex: 0 0 auto; width: 36px; height: 36px; border-radius: 11px;
+  background: rgba(255, 255, 255, .22); display: flex; align-items: center;
+  justify-content: center; font-size: 19px; line-height: 1;
 }
-.wxcard .wx-txt { flex: 1; min-width: 0; }
-.wxcard .t1 { font-size: 12.5px; color: #C2410C; }
-.wxcard .t2 {
-  font-size: 16px; font-weight: 700; color: #9A3412; letter-spacing: .6px;
+.wxhero-t { font-size: 17px; font-weight: 700; letter-spacing: .3px; }
+.wxhero-s { font-size: 12.5px; color: rgba(255, 255, 255, .85); margin-top: 2px; }
+.wxhero-tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 13px; }
+.wxhero-tag {
+  font-size: 12.5px; line-height: 1; padding: 6px 11px; border-radius: 999px;
+  background: rgba(255, 255, 255, .2); color: #fff;
+}
+.wxhero-act { display: flex; align-items: center; gap: 9px; }
+.wxhero-id {
+  flex: 1; min-width: 0; padding: 10px 13px; border-radius: 10px;
+  background: rgba(255, 255, 255, .97); color: #C2410C;
+  font-size: 15.5px; font-weight: 700; letter-spacing: .6px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  word-break: break-all;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.wxcard .wx-btn {
-  flex: 0 0 auto; border: 0; border-radius: 9px; padding: 9px 16px;
-  background: var(--o); color: #fff; font-size: 13px; font-weight: 600;
-  font-family: inherit; cursor: pointer; transition: transform .12s, background .2s;
+.wxhero-btn {
+  flex: 0 0 auto; border: 0; border-radius: 10px; padding: 10px 16px;
+  background: #fff; color: #E25C00; font-size: 13.5px; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: transform .12s, background .2s, color .2s;
 }
-.wxcard .wx-btn:active { transform: scale(.95); }
-.wxcard .wx-btn.done { background: #15803D; }
+.wxhero-btn:active { transform: scale(.95); }
+.wxhero-btn.done { background: #15803D; color: #fff; }
+/* 大卡紧挨 hero 时，别留 64px 大空档 */
+.wxhero + .hero { padding-top: 22px; }
+
+/* ---------- 加微信：吸底悬浮条 ---------- */
+.wxbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+  max-width: 880px; margin: 0 auto;
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, .97);
+  border-top: 1px solid #FFE1CA;
+  box-shadow: 0 -4px 18px rgba(180, 120, 70, .1);
+  backdrop-filter: blur(8px);
+  transform: translateY(110%); transition: transform .28s ease;
+}
+.wxbar.on { transform: translateY(0); }
+.wxbar-ico {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px;
+  background: linear-gradient(135deg, #F97316, #FB923C); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 17px;
+}
+.wxbar-txt { flex: 1; min-width: 0; }
+.wxbar-l1 {
+  font-size: 13.5px; color: var(--ink); font-weight: 600; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.wxbar-l1 b {
+  color: #C2410C; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: .4px;
+}
+.wxbar-l2 { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
+.wxbar-btn {
+  flex: 0 0 auto; border: 0; border-radius: 9px; padding: 9px 15px;
+  background: linear-gradient(135deg, #F97316, #FB923C); color: #fff;
+  font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
+  transition: transform .12s, background .2s;
+}
+.wxbar-btn:active { transform: scale(.95); }
+.wxbar-btn.done { background: #15803D; }
+body.has-wxbar { padding-bottom: calc(74px + env(safe-area-inset-bottom)); }
 
 @media (max-width: 640px) {
-  .wxcard { margin: 28px 16px 0; padding: 13px 14px; gap: 11px; }
-  .wxcard .wx-ico { width: 34px; height: 34px; font-size: 18px; }
-  .wxcard .t1 { font-size: 11.5px; }
-  .wxcard .t2 { font-size: 15px; }
-  .wxcard .wx-btn { padding: 8px 13px; font-size: 12.5px; }
+  .wxhero { margin: 18px 0 16px; padding: 14px 14px 13px; }
+  .wxhero-t { font-size: 16px; }
+  .wxhero-s { font-size: 11.5px; }
+  .wxhero-tags { gap: 6px; margin: 10px 0 11px; }
+  .wxhero-tag { font-size: 11.5px; padding: 6px 9px; }
+  .wxhero-id { font-size: 14.5px; padding: 9px 11px; }
+  .wxhero-btn { padding: 9px 13px; font-size: 12.5px; }
+  .wxbar { padding: 9px 14px calc(9px + env(safe-area-inset-bottom)); gap: 10px; }
+  .wxbar-l1 { font-size: 13px; }
+  .wxbar-l2 { font-size: 10.5px; }
+  .wxbar-btn { padding: 8px 13px; font-size: 12.5px; }
 }
 
 /* ---------- 试卷页 ---------- */
@@ -308,7 +364,7 @@ mjx-container[jax="SVG"][display="true"] { overflow-x: auto; overflow-y: hidden;
 /* ---------- 打印 ---------- */
 @media print {
   body { background: #fff; }
-  .topbar, .toolbar, .totop, footer.foot, .paper-foot { display: none !important; }
+  .topbar, .toolbar, .totop, footer.foot, .paper-foot, .wxbar, .wxhero { display: none !important; }
   .wrap { max-width: none; padding: 0; }
   .q { break-inside: avoid; page-break-inside: avoid; border-color: #ddd; }
   .sol { display: block !important; background: #fff; }
